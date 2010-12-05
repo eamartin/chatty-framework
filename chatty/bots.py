@@ -1,29 +1,33 @@
-import itertools
 import time
 
+from roadmap import Roadmap
+
 from core import IRCConnection
-from messages import IRCMessage
+
         
 class IRCBot(object):
-    def __init__(self, nick, server_infos):
-        self.connections = {}
-        for server in server_infos:
-            c = IRCConnection(server['host'], server['port'], nick)
-            c.connect()
-            c.authenticate()
-            time.sleep(1)
-            for chan in server['chans']:
-                c.join(chan)
-            self.connections[server['host']] = c
+    def __init__(self, nick, server):
+        self.connection = IRCConnection(server['host'], server['port'], nick)
+        self.connection.connect()
+        self.connection.authenticate()
+        time.sleep(1)
+        for chan in server['chans']:
+            self.connection.join(chan)
             
     def activate(self):
-        for c in itertools.cycle(self.connections.values()):
-            event =  c.event_loop().next()
+        for event in self.connection.event_loop():
             if event:
-                event.msg = IRCMessage.parse(event.text)
-                if event.msg:
-                    self.process(event)
+                self.process(event)
+            else:
+                continue
                 
     def process(self, irc):
         '''Hook for subclasses'''
         pass
+
+class RoutingBot(IRCBot, Roadmap):
+    def __init__(self, *args, **kwargs):
+        super(RoutingBot, self).__init__(*args, **kwargs)
+
+    def process(self, irc):
+        self.route((self, irc), key=repr(irc.msg))

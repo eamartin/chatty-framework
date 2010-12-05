@@ -7,15 +7,16 @@ class IRCConnection(object):
         self.nick = nick
 
     def connect(self):
-        self._sock = socket.create_connection((self.host, self.port)).makefile()
+        self._sock = socket.create_connection((self.host, self.port))
+        self.closed = False
 
     def disconnect(self):
         self.send('QUIT')
         self._sock.close()
+        self.closed = True
 
     def send(self, data):
-        self._sock.write('%s\r\n' % data)
-        self._sock.flush()
+        self._sock.send('%s\r\n' % data)
 
     def authenticate(self):
         self.send('NICK %s' % self.nick)
@@ -42,17 +43,12 @@ class IRCConnection(object):
         self.send('NOTICE %s :%s' % (recip, msg))
 
     def event_loop(self):
-        while not self._sock.closed:
-            line = self._sock.readline()
-            if not line:
-                yield None
-                continue
+        while not self.closed:
+            line = self._sock.recv(2048)
             line = line.rstrip()
             if line.startswith('PING'):
                 self.send('PONG %s' % line.split()[1])
             else:
                 self.text = line
                 yield self
-        self.text = 'CONNECTION_CLOSED'
-        yield self
   
