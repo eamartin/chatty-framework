@@ -48,9 +48,6 @@ class IRCConnection(object):
             line = line.rstrip()
             if line.startswith('PING'):
                 self.send('PONG %s' % line.split()[1])
-            elif line:
-                print line
-                yield line
             else:
-                continue
+                yield line
   

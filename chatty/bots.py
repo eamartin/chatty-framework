@@ -17,6 +17,9 @@ class IRCBot(object):
             self.connection.join(chan)
 
     def activate(self):
+        Thread(target=self._activate).start()
+
+    def _activate(self):
         for line in self.connection.event_loop():
             if line:
                 msg = IRCMessage.parse(line)
@@ -31,9 +34,5 @@ class IRCBot(object):
         pass
 
 class RoutingBot(IRCBot, Roadmap):
-    def __init__(self, *args, **kwargs):
-        super(RoutingBot, self).__init__(*args, **kwargs)
-
     def process(self, irc):
-        time.sleep(5)
         self.route((self, irc), key=repr(irc.msg))
