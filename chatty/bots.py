@@ -25,12 +25,12 @@ class IRCBot(object):
                 msg = IRCMessage.parse(line)
                 if msg:
                     connection.msg = msg
-                    Thread(target=self.process, args=(connection,)).start()
+                    self.process(connection)
 
     def make_connections(self):
        for server in self.server_infos:
             self.conns[server['host']] = IRCConnection(server['host'],
-                                                      server['port'], nick)
+                                                      server['port'], self.nick)
             self.conns[server['host']].connect()
             self.conns[server['host']].authenticate()
             time.sleep(2)
