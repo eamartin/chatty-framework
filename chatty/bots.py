@@ -1,4 +1,5 @@
 import time
+from threading import Thread
 
 from roadmap import Roadmap
 
@@ -11,20 +12,20 @@ class IRCBot(object):
         self.connection = IRCConnection(server['host'], server['port'], nick)
         self.connection.connect()
         self.connection.authenticate()
-        time.sleep(1)
+        time.sleep(2)
         for chan in server['chans']:
             self.connection.join(chan)
-            
+
     def activate(self):
-        for event in self.connection.event_loop():
-            if event:
-                msg = IRCMessage.parse(event.text)
+        for line in self.connection.event_loop():
+            if line:
+                msg = IRCMessage.parse(line)
                 if msg:
                     self.connection.msg = msg
-                    self.process(self.connection)
+                    Thread(target=self.process, args=(self.connection,)).start()
             else:
                 continue
-                
+
     def process(self, irc):
         '''Hook for subclasses'''
         pass
@@ -34,4 +35,5 @@ class RoutingBot(IRCBot, Roadmap):
         super(RoutingBot, self).__init__(*args, **kwargs)
 
     def process(self, irc):
+        time.sleep(5)
         self.route((self, irc), key=repr(irc.msg))
