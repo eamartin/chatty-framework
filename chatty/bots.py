@@ -1,3 +1,4 @@
+import itertools
 import time
 from threading import Thread
 
@@ -8,26 +9,33 @@ from messages import IRCMessage
 
 
 class IRCBot(object):
-    def __init__(self, nick, server):
-        self.connection = IRCConnection(server['host'], server['port'], nick)
-        self.connection.connect()
-        self.connection.authenticate()
-        time.sleep(2)
-        for chan in server['chans']:
-            self.connection.join(chan)
+    def __init__(self, nick, server_infos):
+        self.conns = {}
+        self.nick = nick
+        self.server_infos = server_infos
 
     def activate(self):
-        Thread(target=self._activate).start()
+        t = Thread(target=self._activate)
+        t.start()
 
     def _activate(self):
-        for line in self.connection.event_loop():
+        for connection in itertools.cycle(self.conns.values()):
+            line = connection.event_loop().next()
             if line:
                 msg = IRCMessage.parse(line)
                 if msg:
-                    self.connection.msg = msg
-                    Thread(target=self.process, args=(self.connection,)).start()
-            else:
-                continue
+                    connection.msg = msg
+                    Thread(target=self.process, args=(connection,)).start()
+
+    def make_connections(self):
+       for server in self.server_infos:
+            self.conns[server['host']] = IRCConnection(server['host'],
+                                                      server['port'], nick)
+            self.conns[server['host']].connect()
+            self.conns[server['host']].authenticate()
+            time.sleep(2)
+            for chan in server['chans']:
+                self.conns[server['host']].join(chan)
 
     def process(self, irc):
         '''Hook for subclasses'''

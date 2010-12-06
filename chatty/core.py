@@ -8,6 +8,7 @@ class IRCConnection(object):
 
     def connect(self):
         self._sock = socket.create_connection((self.host, self.port))
+        self._sock.setblocking(0)
         self.closed = False
 
     def disconnect(self):
@@ -44,7 +45,10 @@ class IRCConnection(object):
 
     def event_loop(self):
         while not self.closed:
-            line = self._sock.recv(2048)
+            try:
+                line = self._sock.recv(2048)
+            except:
+                yield None
             line = line.rstrip()
             if line.startswith('PING'):
                 self.send('PONG %s' % line.split()[1])
