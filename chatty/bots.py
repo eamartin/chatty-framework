@@ -3,8 +3,9 @@ import time
 from roadmap import Roadmap
 
 from core import IRCConnection
+from messages import IRCMessage
 
-        
+
 class IRCBot(object):
     def __init__(self, nick, server):
         self.connection = IRCConnection(server['host'], server['port'], nick)
@@ -17,7 +18,10 @@ class IRCBot(object):
     def activate(self):
         for event in self.connection.event_loop():
             if event:
-                self.process(event)
+                msg = IRCMessage.parse(event.text)
+                if msg:
+                    self.connection.msg = msg
+                    self.process(self.connection)
             else:
                 continue
                 

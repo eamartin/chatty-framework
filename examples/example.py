@@ -12,6 +12,5 @@ if __name__ == '__main__':
     @bot.destination(r'chan:#.* type:PRIVMSG nick:.* msg:[Hh]i$')
     def hello(bot, irc):
         irc.privmsg('Hello %s' % irc.msg.nick, chan=irc.msg.chan)
-        print bot.connections
     
     bot.activate()
